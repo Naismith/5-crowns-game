@@ -1,0 +1,11 @@
+{
+  "name": "5-crowns-game",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "yarn workspaces run start"
+  }
+}
