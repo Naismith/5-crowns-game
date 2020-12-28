@@ -1,53 +1,49 @@
-import React from 'react';
-import styled from 'styled-components';
-import { CardType, CardValue } from '../common/types';
+import React from "react";
+import styled from "styled-components";
+import { CardSuit, CardValue } from "../common/types";
 
-const Wrapper = styled.article`
-    height: 7em;
-    width: 3.5em;
+const Wrapper = styled.article<{ selected: boolean }>`
+  height: 7em;
+  width: 3.5em;
+  margin-right: 0.5em;
 
-    font-size: 3rem;
-    border-radius: 0.25em;
-    display: inline-block;
-    padding: 1rem;
-    border: 1px solid black;
-`
+  font-size: 3rem;
+  border-radius: 0.25em;
+  display: inline-block;
+  padding: 1rem;
+  border: 2px solid ${(props) => (props.selected ? "red" : "black")};
+`;
 
 interface Props {
-    type: CardType
-    value: CardValue
-};
-
-
-const getCardIcon = (type: CardType) => {
-    switch (type) {
-        case "club":
-            return "♣️";
-        case "diamond":
-            return "♦️";
-        case "heart":
-            return "♥️";
-        case "joker":
-            return null;
-        case "spade":
-            return "♠️"
-        case "star":
-            return "⭐";
-    }
+  suit: CardSuit;
+  value: CardValue;
+  onClick: () => void;
+  selected: boolean;
 }
 
-export const Card = ({ type, value }: Props) => {
-    const icon = getCardIcon(type);
+const getCardIcon = (suit: CardSuit) => {
+  switch (suit) {
+    case "club":
+      return "♣️";
+    case "diamond":
+      return "♦️";
+    case "heart":
+      return "♥️";
+    case "joker":
+      return null;
+    case "spade":
+      return "♠️";
+    case "star":
+      return "⭐";
+  }
+};
 
-    if (type === "joker") {
-        return <Wrapper>
-            JOKER
-        </Wrapper>
-    }
+export const Card = ({ suit, value, onClick, selected }: Props) => {
+  const icon = getCardIcon(suit);
 
-    return (
-        <Wrapper>
-            {value} {icon}
-        </Wrapper>
-    )
+  return (
+    <Wrapper onClick={onClick} selected={selected}>
+      {suit === "joker" ? "JOKER" : `${value} ${icon}`}
+    </Wrapper>
+  );
 };

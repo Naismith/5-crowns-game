@@ -1,12 +1,7 @@
-import React, { useState, useRef } from "react";
-import { Card } from "../components/Card";
-import { CardType, CardValue } from "../common/types";
+import React from "react";
 import { Button } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import { useGameLogic } from "../hooks/useGameLogic";
-
-const types = ["club", "heart", "spade", "star", "diamond"] as CardType[];
-const values = [3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"] as CardValue[];
 
 const Lobby = () => {
   const { games, createGame } = useGameLogic();

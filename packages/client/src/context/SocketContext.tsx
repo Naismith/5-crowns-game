@@ -20,7 +20,7 @@ export const Provider: React.FC = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const newSocket = io(`ws://localhost:4000`, {
+    const newSocket = io(`ws://192.168.1.2:4000`, {
       reconnectionDelayMax: 10000,
     });
 
