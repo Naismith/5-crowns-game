@@ -1,38 +1,19 @@
 import _ from "lodash";
+import { makeCard } from "./Card.js";
 
-const makeCard = (suit, value) => ({
-  suit,
-  value,
-});
-
-const suits = ["club", "heart", "spade", "star", "diamond"];
-const values = [3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"];
-
-export const makeDeck = () => {
-  const deck = [];
-
-  suits.forEach((suit) => {
-    values.forEach((value) => {
-      deck.push(makeCard(suit, value));
-    });
-  });
-
-  deck.push(...deck);
-
-  Array(6)
-    .fill("")
-    .forEach(() => {
-      deck.push(makeCard("joker", 50));
-    });
-
-  return deck;
-};
+const defaultSuits = ["club", "heart", "spade", "diamond"];
+const defaultValues = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"];
 
 export class Deck {
-  constructor() {
-    this.cards = makeDeck();
+  constructor(suits = defaultSuits, values = defaultValues) {
+    this.suits = suits;
+    this.values = values;
+
+    this.cards = [];
     this.activeCards = [];
     this.discarded = [];
+
+    this.generate();
   }
 
   // Will shuffle all cards existing in the deck.
@@ -40,26 +21,27 @@ export class Deck {
     this.cards = _.shuffle(this.cards);
   };
 
+  generate = () => {
+    const cards = [];
+
+    this.suits.forEach((suit) => {
+      this.values.forEach((value) => {
+        cards.push(makeCard(suit, value));
+      });
+    });
+
+    this.cards = cards;
+  };
+
   reset = () => {
-    // Unsure if I should do this, or just call the makeDeck function.
-    this.cards = [...this.cards, ...this.activeCards, ...this.discarded];
-    this.activeCards = [];
-    this.discarded = [];
-    this.shuffle();
+    this.generate();
   };
 
   // Will remove (n) number of cards from the deck and return them
   draw = (amount = 1) => {
     const drawn = _.take(this.cards, amount);
-    this.drawnCards.push(...drawn);
     this.cards = _.drop(this.cards, amount);
 
     return drawn;
   };
 }
-
-// const deck = new Deck();
-
-// const temp = deck.draw();
-// console.log(temp);
-// console.log(deck.cards);

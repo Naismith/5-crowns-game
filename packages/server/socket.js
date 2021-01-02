@@ -1,17 +1,6 @@
 import { Server } from "socket.io";
-import { v4 } from "uuid";
-import { makeDeck } from "./lib/Deck.js";
+import { Game } from "./lib/Game.js";
 import _ from "lodash";
-
-const games = [];
-
-const makeGame = () => {
-  return {
-    id: v4(),
-    players: [],
-    deck: makeDeck(),
-  };
-};
 
 const socket = (server) => {
   const io = new Server(server, {
@@ -19,6 +8,8 @@ const socket = (server) => {
       origin: "*",
     },
   });
+
+  const games = [new Game("demo")];
 
   // Refresh game list every 7.5 seconds
   setInterval(() => {
@@ -29,28 +20,50 @@ const socket = (server) => {
     socket.emit("game-list", { games }); // Emit game list on initial connection
 
     socket.on("create-game", (cb) => {
-      console.log("creating game");
-      const newGame = makeGame();
+      const newGame = new Game();
+      newGame.addPlayer(socket.id);
+
       games.push(newGame);
-      socket.join(newGame.id);
       cb(newGame);
     });
 
     socket.on("JOIN_GAME", (id, cb) => {
       socket.join(id);
-      io.to(id).emit("PLAYERS", [...io.sockets.adapter.rooms.get(id)]);
+
+      const game = games.find((game) => game.id === id);
+      game.addPlayer(socket.id);
+
+      game.players.forEach((player) => {
+        io.to(player.socketId).emit("GAME_STATUS", game.getStatus(player.id));
+      });
+      io.to(id).emit("PLAYERS", Array.from(io.sockets.adapter.rooms.get(id)));
+    });
+
+    socket.on("DRAW_FROM_DECK", (id, cb) => {
+      const game = games.find((game) => game.id === id);
+      const card = game.drawForPlayer();
+      cb(card);
+    });
+
+    socket.on("DISCARD_CARD", (id, cardId) => {
+      console.log(id, cardId);
+      const game = games.find((game) => game.id === id);
+      game.discardForPlayer(cardId);
+
+      game.players.forEach((player) => {
+        io.to(player.socketId).emit("GAME_STATUS", game.getStatus(player.id));
+      });
     });
 
     socket.on("START_GAME", (id) => {
-      const playerList = [...io.sockets.adapter.rooms.get(id)];
       const game = games.find((game) => game.id === id);
-      const hands = _.chunk(_.take(game.deck, playerList.length * 3), 3);
 
-      playerList.forEach((id, index) => {
-        io.to(id).emit("CARDS", hands[index]);
+      game.startGame();
+
+      game.players.forEach((player) => {
+        io.to(player.socketId).emit("GAME_STATUS", game.getStatus(player.id));
+        io.to(player.socketId).emit("CARDS", player.hand);
       });
-
-      console.log(hands);
     });
   });
 

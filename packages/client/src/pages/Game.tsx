@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSocketContext } from "../context/SocketContext";
-import { DeckCard } from "../common/types";
+import { DeckCard, GameStatus } from "../common/types";
 import { Card } from "../components/Card";
 
 const useGameSocket = (id: string) => {
   const { socket } = useSocketContext();
+  const [isCurrentTurn, setIsCurrentTurn] = useState<boolean>(false);
+  const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
+  const [selected, setSelected] = useState<null | number>(null);
   const [hand, setHand] = useState<DeckCard[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
 
@@ -21,19 +24,59 @@ const useGameSocket = (id: string) => {
     socket.on("CARDS", (cards: DeckCard[]) => {
       setHand(cards);
     });
+
+    socket.on("GAME_STATUS", (gameStatus: GameStatus) => {
+      console.log(gameStatus);
+      setGameStatus(gameStatus);
+    });
   }, [id]);
+
+  const drawFromDeck = () => {
+    socket.emit("DRAW_FROM_DECK", id, (card: DeckCard[]) => {
+      setHand((prev) => [...prev, ...card]);
+    });
+  };
 
   const startGame = () => {
     socket.emit("START_GAME", id);
   };
 
-  return { players, startGame, hand };
+  const discardFromHand = () => {
+    if (!gameStatus || !selected) return;
+
+    if (hand.length > gameStatus?.currentRound) {
+      socket.emit("DISCARD_CARD", id, hand[selected].id);
+      setHand((prev) => prev.filter((card, index) => index !== selected));
+      setSelected(null);
+    }
+  };
+
+  return {
+    isCurrentTurn,
+    gameStatus,
+    players,
+    startGame,
+    hand,
+    drawFromDeck,
+    discardFromHand,
+    selected,
+    setSelected,
+  };
 };
 
 const Game = () => {
   const { id } = useParams<{ id: string }>();
-  const [selected, setSelected] = useState<null | number>(null);
-  const { players, startGame, hand } = useGameSocket(id);
+
+  const {
+    gameStatus,
+    players,
+    startGame,
+    hand,
+    drawFromDeck,
+    discardFromHand,
+    selected,
+    setSelected,
+  } = useGameSocket(id);
 
   return (
     <div>
@@ -45,7 +88,20 @@ const Game = () => {
         </li>
       </ul>
 
-      <button onClick={startGame}>Start Game</button>
+      {gameStatus !== null && (
+        <>
+          {gameStatus.state !== "started" && (
+            <button onClick={startGame}>Start Game</button>
+          )}
+
+          {gameStatus.currentTurn && (
+            <>
+              <button onClick={drawFromDeck}>Draw from deck</button>
+              <button onClick={discardFromHand}>Remove from hand</button>
+            </>
+          )}
+        </>
+      )}
 
       {hand.map(({ suit, value }, i) => (
         <Card
